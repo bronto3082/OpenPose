@@ -5,5 +5,6 @@ int main() {
 	std::string temppath = "C:\\Users\\USER\\Desktop\\testOutput";
 	std::string output = "C:\\Users\\USER\\Desktop\\output.avi";
 	EncodeDecoder end(input, temppath, output);
+	end.Decode();
 
 }

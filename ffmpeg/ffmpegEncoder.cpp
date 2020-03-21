@@ -1,3 +1,4 @@
+#pragma warning(disable:4996)
 #include "ffmpegEncoder.h"
 
 #define AVFMT_RAWPICTURE 0x0020
