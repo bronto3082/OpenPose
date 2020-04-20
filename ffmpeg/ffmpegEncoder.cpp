@@ -38,7 +38,6 @@ bool ffmpegEncoder::InitFile(std::string& inputFile, std::string& container)
 			// Add video and audio stream
 			pVideoStream = AddVideoStream(pFormatContext, pOutFormat->video_codec);
 			pAudioStream = AddAudioStream(pFormatContext, pOutFormat->audio_codec);
-
 			// Set the output parameters (must be done even if no
 			// parameters).
 			{
@@ -125,10 +124,12 @@ bool ffmpegEncoder::AddFrame(AVFrame* frame, const char* soundBuffer, int soundB
 	}
 
 	// Add sound
+	/*
 	if (soundBuffer && soundBufferSize > 0)
 	{
 		res = AddAudioSample(pFormatContext, pAudioStream, soundBuffer, soundBufferSize);
 	}
+	*/
 
 	return res;
 }
@@ -204,7 +205,7 @@ AVFrame* ffmpegEncoder::CreateFFmpegPicture(AVPixelFormat pix_fmt, int nWidth, i
 		return NULL;
 	}
 
-	size = avpicture_get_size(pix_fmt, nWidth, nHeight);
+	size = av_image_get_buffer_size(pix_fmt, nWidth, nHeight, 1);
 
 	picture_buf = (uint8_t*)av_malloc(size);
 
@@ -215,8 +216,8 @@ AVFrame* ffmpegEncoder::CreateFFmpegPicture(AVPixelFormat pix_fmt, int nWidth, i
 		return NULL;
 	}
 
-	avpicture_fill((AVPicture*)picture, picture_buf,
-		pix_fmt, nWidth, nHeight);
+	av_image_fill_arrays(((AVPicture*)picture)->data, ((AVPicture*)picture)->linesize, picture_buf,
+		pix_fmt, nWidth, nHeight, 1);
 
 	return picture;
 }
@@ -301,7 +302,8 @@ AVStream* ffmpegEncoder::AddVideoStream(AVFormatContext* pContext, AVCodecID cod
 		printf("Cannot add new vidoe stream\n");
 		return NULL;
 	}
-
+	st->time_base.den = 25;
+	st->time_base.num = 1;
 	pCodecCxt = st->codec;
 	pCodecCxt->codec_id = (AVCodecID)codec_id;
 	pCodecCxt->codec_type = AVMEDIA_TYPE_VIDEO;
@@ -309,8 +311,8 @@ AVStream* ffmpegEncoder::AddVideoStream(AVFormatContext* pContext, AVCodecID cod
 	// Put sample parameters.
 	pCodecCxt->bit_rate = 2000000;
 	// Resolution must be a multiple of two.
-	pCodecCxt->width = W_VIDEO;
-	pCodecCxt->height = H_VIDEO;
+	pCodecCxt->width = wVideo;
+	pCodecCxt->height = hVideo;
 	/* time base: this is the fundamental unit of time (in seconds) in terms
 	of which frame timestamps are represented. for fixed-fps content,
 	timebase should be 1/framerate and timestamp increments should be

@@ -3,13 +3,11 @@ extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
+#include <libavutil/imgutils.h>
 }
 #include <Windows.h>
 #include <string>
 
-#define W_VIDEO 320
-#define H_VIDEO 240
-#define FRAME_COUNT        150
 #define CONTAINER          "auto"
 
 class ffmpegEncoder
@@ -47,9 +45,13 @@ private:
     int   nAudioBufferSize;
     int   nAudioBufferSizeCurrent;
 
+    int frameCount;
+    int wVideo;
+    int hVideo;
+
 public:
 
-    ffmpegEncoder()
+    ffmpegEncoder(int w, int h, int frame)
     {
         pOutFormat = NULL;
         pFormatContext = NULL;
@@ -63,6 +65,10 @@ public:
         nAudioBufferSize = 1024 * 1024 * 4;
         audioBuffer = new char[nAudioBufferSize];
         nAudioBufferSizeCurrent = 0;
+
+        frameCount = frame;
+        wVideo = w;
+        hVideo = h;
     }
 
     virtual ~ffmpegEncoder()

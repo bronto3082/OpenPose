@@ -2,9 +2,6 @@
 #include "EncodeDecoder.h"
 #include <windows.h>
 
-std::string FILE_NAME = "C:\\Users\\USER\\Desktop\\video.avi";
-std::string OUTPUT_FILE_PREFIX = "C:\\Users\\USER\\Desktop\\testOutput\\image%d.bmp";
-
 bool BMPSave(const char* pFileName, AVFrame* frame, int w, int h)
 {
 	bool bResult = false;
@@ -66,22 +63,54 @@ bool BMPSave(const char* pFileName, AVFrame* frame, int w, int h)
 	return bResult;
 }
 
-void CreateFrame(char* buffer, int w, int h, int bytespan)
+static int inputCount = 0;
+
+unsigned char* readBMP(const char* filename)
 {
+	int i;
+	FILE* f = fopen(filename, "rb");
+	unsigned char info[54];
+
+	// read the 54-byte header
+	fread(info, sizeof(unsigned char), 54, f);
+
+	// extract image height and width from header
+	int width = *(int*)&info[18];
+	int height = *(int*)&info[22];
+
+	// allocate 3 bytes per pixel
+	int size = 3 * width * height;
+	unsigned char* data = new unsigned char[size];
+
+	// read the rest of the data at once
+	fread(data, sizeof(unsigned char), size, f);
+	fclose(f);
+
+	return data;
+}
+
+void EncodeDecoder::CreateFrame(char* buffer, int w, int h, int bytespan)
+{
+	char filename[MAX_PATH];
+	sprintf(filename, INPUT_FILE_PATH.c_str(), inputCount++);
+	unsigned char* readResult = readBMP(filename);
 	int wxh = w * h;
 	static float seed = 1.0;
-	for (int i = 0; i < h; i++)
+	int temp = 0;
+	
+	for (int i = h - 1; i >= 0; i--)
 	{
-		char* line = buffer + i * bytespan;
+		char* line = buffer + (h - 1 - i) * bytespan;
 		for (int j = 0; j < w; j++)
 		{
 			// RGB
-			line[0] = 255 * sin(((float)i / wxh * seed) * 3.14);
-			line[1] = 255 * cos(((float)j / wxh * seed) * 3.14);
-			line[2] = 255 * sin(((float)(i + j) / wxh * seed) * 3.14);
+			line[0] = readResult[3 * (i * w + j) + 2];
+			line[1] = readResult[3 * (i * w + j) + 1];
+			line[2] = readResult[3 * (i * w + j) ];
 			line += 3;
 		}
 	}
+	
 	seed = seed + 2.2;
 }
 
@@ -121,6 +150,8 @@ bool EncodeDecoder::Decode()
 	{
 		int w = decoder.GetWidth();
 		int h = decoder.GetHeight();
+		W_VIDEO = w;
+		H_VIDEO = h;
 		int count = 0;
 		bool stop = false;
 		while (!stop)
@@ -141,7 +172,7 @@ bool EncodeDecoder::Decode()
 				stop = true;
 			}
 		}
-
+		FRAME_COUNT = count;
 		decoder.CloseFile();
 	}
 	else
@@ -154,28 +185,28 @@ bool EncodeDecoder::Decode()
 }
 
 bool EncodeDecoder::Encode() {
-	ffmpegEncoder encoder;
+	ffmpegEncoder encoder(W_VIDEO, H_VIDEO, FRAME_COUNT);
 	std::string container = "auto";
 	if (encoder.InitFile(OUT_FILE_NAME, container))
 	{
-		int w = W_VIDEO;
-		int h = H_VIDEO;
+		int w = 1280;
+		int h = 720;
 		AVFrame* frame = av_frame_alloc();
 		int nSampleSize = 2 * 44100.0f / 25.0f; // 1 / 25 sec * FORMAT SIZE(S16)
 		char* sample = new char[nSampleSize];
 		// Create frame
-		int bufferImgSize = avpicture_get_size(AV_PIX_FMT_BGR24, w, h);
+		int bufferImgSize = av_image_get_buffer_size(AV_PIX_FMT_BGR24, w, h, 1);
 		uint8_t* buffer = (uint8_t*)av_mallocz(bufferImgSize);
-		avpicture_fill((AVPicture*)frame, buffer, AV_PIX_FMT_BGR24, w, h);
-
+		av_image_fill_arrays(((AVPicture*)frame)->data, ((AVPicture*)frame)->linesize, buffer, AV_PIX_FMT_BGR24, w, h, 1);
 		for (int i = 0; i < FRAME_COUNT; i++)
 		{
-			CreateFrame((char*)frame->data[0], w, h, frame->linesize[0]);
+			CreateFrame((char*)frame->data[0], w,h, frame->linesize[0]);
 			CreateSample((short*)sample, nSampleSize / 2);
 			if (!encoder.AddFrame(frame, sample, nSampleSize))
 			{
 				printf("Cannot write frame\n");
 			}
+			printf("%d", i);
 		}
 
 		encoder.Finish();
