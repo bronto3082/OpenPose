@@ -180,17 +180,17 @@ bool EncodeDecoder::Decode()
 		printf("Cannot open file %s \n", FILE_NAME.c_str());
 		return false;
 	}
-
+	FPS = decoder.GetFPS();
 	return true;
 }
 
 bool EncodeDecoder::Encode() {
-	ffmpegEncoder encoder(W_VIDEO, H_VIDEO, FRAME_COUNT);
+	ffmpegEncoder encoder(W_VIDEO, H_VIDEO, FRAME_COUNT, FPS);
 	std::string container = "auto";
 	if (encoder.InitFile(OUT_FILE_NAME, container))
 	{
-		int w = 1280;
-		int h = 720;
+		int w = W_VIDEO;
+		int h = H_VIDEO;
 		AVFrame* frame = av_frame_alloc();
 		int nSampleSize = 2 * 44100.0f / 25.0f; // 1 / 25 sec * FORMAT SIZE(S16)
 		char* sample = new char[nSampleSize];

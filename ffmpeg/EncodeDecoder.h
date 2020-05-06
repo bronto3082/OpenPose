@@ -20,4 +20,5 @@ private:
 	int FRAME_COUNT;
 	int W_VIDEO;
 	int H_VIDEO;
+	double FPS;
 };

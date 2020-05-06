@@ -40,6 +40,11 @@ public: int GetHeight()
     return height;
 }
 
+public: double GetFPS() 
+{
+    return videoFramePerSecond;
+}
+
       // open video stream.
 private: bool OpenVideo();
 

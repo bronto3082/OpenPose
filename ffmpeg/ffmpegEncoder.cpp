@@ -302,7 +302,7 @@ AVStream* ffmpegEncoder::AddVideoStream(AVFormatContext* pContext, AVCodecID cod
 		printf("Cannot add new vidoe stream\n");
 		return NULL;
 	}
-	st->time_base.den = 25;
+	st->time_base.den = FPS;
 	st->time_base.num = 1;
 	pCodecCxt = st->codec;
 	pCodecCxt->codec_id = (AVCodecID)codec_id;
@@ -317,9 +317,9 @@ AVStream* ffmpegEncoder::AddVideoStream(AVFormatContext* pContext, AVCodecID cod
 	of which frame timestamps are represented. for fixed-fps content,
 	timebase should be 1/framerate and timestamp increments should be
 	identically 1. */
-	pCodecCxt->time_base.den = 25;
+	pCodecCxt->time_base.den = FPS;
 	pCodecCxt->time_base.num = 1;
-	pCodecCxt->gop_size = 12; // emit one intra frame every twelve frames at most
+	pCodecCxt->gop_size = FPS; // emit one intra frame every twelve frames at most
 
 	pCodecCxt->pix_fmt = AV_PIX_FMT_YUV420P;
 	if (pCodecCxt->codec_id == AV_CODEC_ID_MPEG2VIDEO)

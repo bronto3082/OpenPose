@@ -48,10 +48,11 @@ private:
     int frameCount;
     int wVideo;
     int hVideo;
+    int FPS;
 
 public:
 
-    ffmpegEncoder(int w, int h, int frame)
+    ffmpegEncoder(int w, int h, int frame, int FrameR)
     {
         pOutFormat = NULL;
         pFormatContext = NULL;
@@ -69,6 +70,7 @@ public:
         frameCount = frame;
         wVideo = w;
         hVideo = h;
+        FPS = FrameR;
     }
 
     virtual ~ffmpegEncoder()
